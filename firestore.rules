@@ -1,0 +1,258 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+    }
+
+    function isValidStringList(arr, maxLen) {
+      return arr is list && arr.size() <= maxLen && (arr.size() == 0 || arr[0] is string);
+    }
+
+    function isValidUserSettings(data, userId) {
+      return data.keys().hasAll([
+          'ownerId', 'autoReplyEnabled', 'autoReplyDelaySeconds', 'webhookVerifyToken', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'autoReplyEnabled', 'autoReplyDelaySeconds', 'webhookVerifyToken', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerId is string && data.ownerId == userId
+        && data.autoReplyEnabled is bool
+        && data.autoReplyDelaySeconds is number && data.autoReplyDelaySeconds >= 1 && data.autoReplyDelaySeconds <= 300
+        && data.webhookVerifyToken is string && data.webhookVerifyToken.size() >= 1 && data.webhookVerifyToken.size() <= 200
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidUserConnection(data, userId) {
+      return data.keys().hasAll([
+          'ownerId', 'userId', 'userName', 'accessToken', 'connectedAt', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'userId', 'userName', 'accessToken', 'connectedAt', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerId is string && data.ownerId == userId
+        && data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128
+        && data.userName is string && data.userName.size() >= 1 && data.userName.size() <= 200
+        && data.accessToken is string && data.accessToken.size() >= 1 && data.accessToken.size() <= 2048
+        && data.connectedAt is string && data.connectedAt.size() >= 1 && data.connectedAt.size() <= 64
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidFacebookPage(data, userId, pageId) {
+      return data.keys().hasAll([
+          'ownerId', 'id', 'name', 'mode', 'autoPolling', 'webhookSubscribed', 'connectedAt', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'id', 'name', 'category', 'pictureUrl', 'fanCount', 'mode',
+          'autoPolling', 'webhookSubscribed', 'accessToken', 'connectedAt', 'lastSyncedAt', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerId is string && data.ownerId == userId
+        && data.id is string && data.id == pageId
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 200
+        && (!('category' in data) || (data.category is string && data.category.size() <= 200))
+        && (!('pictureUrl' in data) || (data.pictureUrl is string && data.pictureUrl.size() <= 1024))
+        && (!('fanCount' in data) || (data.fanCount is number && data.fanCount >= 0))
+        && data.mode is string && data.mode in ['live', 'sandbox']
+        && data.autoPolling is bool
+        && data.webhookSubscribed is bool
+        && (!('accessToken' in data) || (data.accessToken is string && data.accessToken.size() <= 2048))
+        && data.connectedAt is string && data.connectedAt.size() >= 1 && data.connectedAt.size() <= 64
+        && (!('lastSyncedAt' in data) || (data.lastSyncedAt is string && data.lastSyncedAt.size() <= 64))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAutoReplyRule(data, userId, ruleId) {
+      return data.keys().hasAll([
+          'ownerId', 'id', 'pageId', 'postId', 'name', 'enabled', 'matchMode',
+          'keywords', 'excludeKeywords', 'replyType', 'aiPrompt', 'publicReplies',
+          'likeComment', 'sendPrivateReply', 'privateReplyText', 'priority', 'triggeredCount',
+          'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'id', 'pageId', 'postId', 'postPreview', 'name', 'enabled', 'matchMode',
+          'keywords', 'excludeKeywords', 'replyType', 'aiPrompt', 'publicReplies',
+          'likeComment', 'sendPrivateReply', 'privateReplyText', 'priority', 'triggeredCount',
+          'createdAtIso', 'updatedAtIso', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerId is string && data.ownerId == userId
+        && data.id is string && data.id == ruleId
+        && data.pageId is string && data.pageId.size() >= 1 && data.pageId.size() <= 128
+        && data.postId is string && data.postId.size() >= 1 && data.postId.size() <= 128
+        && (!('postPreview' in data) || (data.postPreview is string && data.postPreview.size() <= 300))
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 200
+        && data.enabled is bool
+        && data.matchMode is string && data.matchMode in ['contains', 'exact', 'any']
+        && isValidStringList(data.keywords, 50)
+        && isValidStringList(data.excludeKeywords, 50)
+        && data.replyType is string && data.replyType in ['template', 'ai']
+        && data.aiPrompt is string && data.aiPrompt.size() <= 4000
+        && isValidStringList(data.publicReplies, 20)
+        && data.likeComment is bool
+        && data.sendPrivateReply is bool
+        && data.privateReplyText is string && data.privateReplyText.size() <= 2000
+        && data.priority is number && data.priority >= 0 && data.priority <= 10000
+        && data.triggeredCount is number && data.triggeredCount >= 0
+        && (!('createdAtIso' in data) || (data.createdAtIso is string && data.createdAtIso.size() <= 64))
+        && (!('updatedAtIso' in data) || (data.updatedAtIso is string && data.updatedAtIso.size() <= 64))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidRuntimeState(data, userId) {
+      return data.keys().hasAll([
+          'ownerId', 'repliedCommentIds', 'totalAiGenerated', 'totalCacheServed', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'repliedCommentIds', 'totalAiGenerated', 'totalCacheServed', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerId is string && data.ownerId == userId
+        && isValidStringList(data.repliedCommentIds, 500)
+        && data.totalAiGenerated is number && data.totalAiGenerated >= 0
+        && data.totalCacheServed is number && data.totalCacheServed >= 0
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /users/{userId}/settings/main {
+      allow get: if isOwner(userId) && (resource == null || existing().ownerId == request.auth.uid);
+      allow list: if false;
+      allow create: if isOwner(userId)
+        && isValidUserSettings(incoming(), userId)
+        && incoming().ownerId == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isOwner(userId)
+        && isValidUserSettings(incoming(), userId)
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['autoReplyEnabled', 'updatedAt'])
+          || incoming().diff(existing()).affectedKeys().hasOnly(['autoReplyDelaySeconds', 'updatedAt'])
+          || incoming().diff(existing()).affectedKeys().hasOnly(['webhookVerifyToken', 'updatedAt'])
+          || incoming().diff(existing()).affectedKeys().hasOnly([
+            'autoReplyEnabled', 'autoReplyDelaySeconds', 'webhookVerifyToken', 'updatedAt'
+          ])
+        );
+      allow delete: if isOwner(userId) && existing().ownerId == request.auth.uid;
+    }
+
+    match /users/{userId}/connections/facebook {
+      allow get: if isOwner(userId) && (resource == null || existing().ownerId == request.auth.uid);
+      allow list: if false;
+      allow create: if isOwner(userId)
+        && isValidUserConnection(incoming(), userId)
+        && incoming().ownerId == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isOwner(userId)
+        && isValidUserConnection(incoming(), userId)
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'userId', 'userName', 'accessToken', 'connectedAt', 'updatedAt'
+        ]);
+      allow delete: if isOwner(userId) && existing().ownerId == request.auth.uid;
+    }
+
+    match /users/{userId}/pages/{pageId} {
+      allow get: if isOwner(userId) && isValidId(pageId) && (resource == null || existing().ownerId == request.auth.uid);
+      allow list: if isOwner(userId) && resource.data.ownerId == request.auth.uid;
+      allow create: if isOwner(userId)
+        && isValidId(pageId)
+        && isValidFacebookPage(incoming(), userId, pageId)
+        && incoming().ownerId == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isOwner(userId)
+        && isValidId(pageId)
+        && isValidFacebookPage(incoming(), userId, pageId)
+        && incoming().ownerId == existing().ownerId
+        && incoming().id == existing().id
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['autoPolling', 'updatedAt'])
+          || incoming().diff(existing()).affectedKeys().hasOnly(['lastSyncedAt', 'updatedAt'])
+          || incoming().diff(existing()).affectedKeys().hasOnly([
+            'name', 'category', 'pictureUrl', 'fanCount', 'mode', 'autoPolling',
+            'webhookSubscribed', 'accessToken', 'connectedAt', 'lastSyncedAt', 'updatedAt'
+          ])
+        );
+      allow delete: if isOwner(userId) && isValidId(pageId) && existing().ownerId == request.auth.uid;
+    }
+
+    match /users/{userId}/rules/{ruleId} {
+      allow get: if isOwner(userId) && isValidId(ruleId) && (resource == null || existing().ownerId == request.auth.uid);
+      allow list: if isOwner(userId) && resource.data.ownerId == request.auth.uid;
+      allow create: if isOwner(userId)
+        && isValidId(ruleId)
+        && isValidAutoReplyRule(incoming(), userId, ruleId)
+        && incoming().ownerId == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isOwner(userId)
+        && isValidId(ruleId)
+        && isValidAutoReplyRule(incoming(), userId, ruleId)
+        && incoming().ownerId == existing().ownerId
+        && incoming().id == existing().id
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['enabled', 'updatedAtIso', 'updatedAt'])
+          || incoming().diff(existing()).affectedKeys().hasOnly(['triggeredCount', 'updatedAtIso', 'updatedAt'])
+          || incoming().diff(existing()).affectedKeys().hasOnly([
+            'pageId', 'postId', 'postPreview', 'name', 'enabled', 'matchMode',
+            'keywords', 'excludeKeywords', 'replyType', 'aiPrompt', 'publicReplies',
+            'likeComment', 'sendPrivateReply', 'privateReplyText', 'priority',
+            'triggeredCount', 'createdAtIso', 'updatedAtIso', 'updatedAt'
+          ])
+        );
+      allow delete: if isOwner(userId) && isValidId(ruleId) && existing().ownerId == request.auth.uid;
+    }
+
+    match /users/{userId}/state/runtime {
+      allow get: if isOwner(userId) && (resource == null || existing().ownerId == request.auth.uid);
+      allow list: if false;
+      allow create: if isOwner(userId)
+        && isValidRuntimeState(incoming(), userId)
+        && incoming().ownerId == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isOwner(userId)
+        && isValidRuntimeState(incoming(), userId)
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'repliedCommentIds', 'totalAiGenerated', 'totalCacheServed', 'updatedAt'
+        ]);
+      allow delete: if isOwner(userId) && existing().ownerId == request.auth.uid;
+    }
+  }
+}

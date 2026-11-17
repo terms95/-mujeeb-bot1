@@ -1,0 +1,6 @@
+{
+  "name": "مُجيب — الرد التلقائي على تعليقات فيسبوك",
+  "description": "منصة احترافية وبسيطة لإدارة الرد التلقائي على تعليقات صفحات فيسبوك ورسائل ماسنجر الفورية عبر قواعد ذكية وربط مباشر بواجهة ميتا.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

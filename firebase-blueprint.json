@@ -1,0 +1,384 @@
+{
+  "entities": {
+    "UserSettings": {
+      "title": "UserSettings",
+      "description": "Global auto-reply settings and manual delay interval for a user.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the owner.",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "autoReplyEnabled": {
+          "type": "boolean",
+          "description": "Whether automatic replying is active."
+        },
+        "autoReplyDelaySeconds": {
+          "type": "number",
+          "description": "Actual enforced interval in seconds between replies (1-300)."
+        },
+        "webhookVerifyToken": {
+          "type": "string",
+          "description": "Meta webhook verification token.",
+          "maxLength": 200
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last update timestamp."
+        }
+      },
+      "required": [
+        "ownerId",
+        "autoReplyEnabled",
+        "autoReplyDelaySeconds",
+        "webhookVerifyToken",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "UserFacebookConnection": {
+      "title": "UserFacebookConnection",
+      "description": "Connected Facebook user token used to manage all pages.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the owner.",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Facebook user ID.",
+          "maxLength": 128
+        },
+        "userName": {
+          "type": "string",
+          "description": "Facebook user display name.",
+          "maxLength": 200
+        },
+        "accessToken": {
+          "type": "string",
+          "description": "Facebook User Access Token.",
+          "maxLength": 2048
+        },
+        "connectedAt": {
+          "type": "string",
+          "description": "ISO timestamp when connected.",
+          "maxLength": 64
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last update timestamp."
+        }
+      },
+      "required": [
+        "ownerId",
+        "userId",
+        "userName",
+        "accessToken",
+        "connectedAt",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "FacebookPageRecord": {
+      "title": "FacebookPageRecord",
+      "description": "A connected live or sandbox Facebook page and its automation state.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the owner.",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "id": {
+          "type": "string",
+          "description": "Facebook page ID.",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Facebook page name.",
+          "maxLength": 200
+        },
+        "category": {
+          "type": "string",
+          "description": "Page category.",
+          "maxLength": 200
+        },
+        "pictureUrl": {
+          "type": "string",
+          "description": "Page avatar URL.",
+          "maxLength": 1024
+        },
+        "fanCount": {
+          "type": "number",
+          "description": "Follower/fan count."
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["live", "sandbox"],
+          "description": "Connection mode."
+        },
+        "autoPolling": {
+          "type": "boolean",
+          "description": "Whether background comment polling is enabled."
+        },
+        "webhookSubscribed": {
+          "type": "boolean",
+          "description": "Whether webhook subscription succeeded."
+        },
+        "accessToken": {
+          "type": "string",
+          "description": "Page Access Token for live API calls.",
+          "maxLength": 2048
+        },
+        "connectedAt": {
+          "type": "string",
+          "description": "ISO timestamp when connected.",
+          "maxLength": 64
+        },
+        "lastSyncedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last sync.",
+          "maxLength": 64
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last update timestamp."
+        }
+      },
+      "required": [
+        "ownerId",
+        "id",
+        "name",
+        "mode",
+        "autoPolling",
+        "webhookSubscribed",
+        "connectedAt",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AutoReplyRuleRecord": {
+      "title": "AutoReplyRuleRecord",
+      "description": "Auto-reply rule configuration for keywords or AI replies.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the owner.",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "id": {
+          "type": "string",
+          "description": "Rule ID.",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "pageId": {
+          "type": "string",
+          "description": "Target page ID or all.",
+          "maxLength": 128
+        },
+        "postId": {
+          "type": "string",
+          "description": "Target post ID or all.",
+          "maxLength": 128
+        },
+        "postPreview": {
+          "type": "string",
+          "description": "Optional post preview text.",
+          "maxLength": 300
+        },
+        "name": {
+          "type": "string",
+          "description": "Rule display name.",
+          "maxLength": 200
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether rule is active."
+        },
+        "matchMode": {
+          "type": "string",
+          "enum": ["contains", "exact", "any"],
+          "description": "Keyword matching mode."
+        },
+        "keywords": {
+          "type": "array",
+          "description": "Trigger keywords list (max 50)."
+        },
+        "excludeKeywords": {
+          "type": "array",
+          "description": "Excluded keywords list (max 50)."
+        },
+        "replyType": {
+          "type": "string",
+          "enum": ["template", "ai"],
+          "description": "Reply generation type."
+        },
+        "aiPrompt": {
+          "type": "string",
+          "description": "Custom AI prompt instructions.",
+          "maxLength": 4000
+        },
+        "publicReplies": {
+          "type": "array",
+          "description": "Template public replies list (max 20)."
+        },
+        "likeComment": {
+          "type": "boolean",
+          "description": "Whether to like matched comments."
+        },
+        "sendPrivateReply": {
+          "type": "boolean",
+          "description": "Whether to send private Messenger reply."
+        },
+        "privateReplyText": {
+          "type": "string",
+          "description": "Template private reply text.",
+          "maxLength": 2000
+        },
+        "priority": {
+          "type": "number",
+          "description": "Rule priority."
+        },
+        "triggeredCount": {
+          "type": "number",
+          "description": "Count of replies sent by this rule."
+        },
+        "createdAtIso": {
+          "type": "string",
+          "description": "Original ISO creation timestamp.",
+          "maxLength": 64
+        },
+        "updatedAtIso": {
+          "type": "string",
+          "description": "Original ISO update timestamp.",
+          "maxLength": 64
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last update timestamp."
+        }
+      },
+      "required": [
+        "ownerId",
+        "id",
+        "pageId",
+        "postId",
+        "name",
+        "enabled",
+        "matchMode",
+        "keywords",
+        "excludeKeywords",
+        "replyType",
+        "aiPrompt",
+        "publicReplies",
+        "likeComment",
+        "sendPrivateReply",
+        "privateReplyText",
+        "priority",
+        "triggeredCount",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "RuntimeSyncState": {
+      "title": "RuntimeSyncState",
+      "description": "Persisted deduplication IDs and AI status counters.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the owner.",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "repliedCommentIds": {
+          "type": "array",
+          "description": "Bounded list of recent replied comment IDs (max 500)."
+        },
+        "totalAiGenerated": {
+          "type": "number",
+          "description": "Total AI replies generated."
+        },
+        "totalCacheServed": {
+          "type": "number",
+          "description": "Total cached AI replies served."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last update timestamp."
+        }
+      },
+      "required": [
+        "ownerId",
+        "repliedCommentIds",
+        "totalAiGenerated",
+        "totalCacheServed",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/settings/main": {
+      "schema": { "$ref": "#/entities/UserSettings" },
+      "description": "Stores the user's persistent global auto-reply settings and manual reply interval."
+    },
+    "/users/{userId}/connections/facebook": {
+      "schema": { "$ref": "#/entities/UserFacebookConnection" },
+      "description": "Stores the user's Facebook user connection token for managing all pages."
+    },
+    "/users/{userId}/pages/{pageId}": {
+      "schema": { "$ref": "#/entities/FacebookPageRecord" },
+      "description": "Stores each connected Facebook page and its auto-polling preference."
+    },
+    "/users/{userId}/rules/{ruleId}": {
+      "schema": { "$ref": "#/entities/AutoReplyRuleRecord" },
+      "description": "Stores the user's auto-reply rules permanently."
+    },
+    "/users/{userId}/state/runtime": {
+      "schema": { "$ref": "#/entities/RuntimeSyncState" },
+      "description": "Stores recent replied comment IDs and AI usage counters across restarts."
+    }
+  }
+}
